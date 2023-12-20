@@ -1,28 +1,24 @@
 <?php
 
-use App\AI\Chat;
+use App\AI\Assistant;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('roast');
+    return view('image', [
+        'messages' => session('messages', [])
+    ]);
 });
 
-Route::post('/roast', function () {
+Route::post('/image', function () {
     $attributes = request()->validate([
-        'topic' => [
-            'required', 'string', 'min:2', 'max:50'
-        ]
+        'description' => ['required', 'string', 'min:3']
     ]);
 
-    $mp3 = (new Chat())->send(
-        message: "Please roast {$attributes['topic']} in a funny and sarcastic tone.",
-        speech: true
-    );
+    $assistant = new Assistant(session('messages', []));
 
-    file_put_contents(public_path($file = "/roasts/".md5($mp3).".mp3"), $mp3);
+    $assistant->visualize($attributes['description']);
 
-    return redirect('/')->with([
-        'file'  => $file,
-        'flash' => 'Boom. Roasted.'
-    ]);
+    session(['messages' => $assistant->messages()]);
+
+    return redirect('/');
 });
