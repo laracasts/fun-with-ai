@@ -25,7 +25,7 @@ class Assistant
         $this->addMessage($message);
 
         $response = OpenAI::chat()->create([
-            "model"    => "gpt-3.5-turbo",
+            "model"    => "gpt-3.5-turbo-1106",
             "messages" => $this->messages
         ])->choices[0]->message->content;
 
