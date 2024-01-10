@@ -1,20 +1,46 @@
 <?php
 
-use App\Rules\SpamFree;
 use Illuminate\Support\Facades\Route;
+use OpenAI\Laravel\Facades\OpenAI;
 
 Route::get('/', function () {
-    return view('create-reply');
-});
+    $file = OpenAI::files()->upload([
+        'purpose' => 'assistants',
+        'file' => fopen(storage_path('docs/parsing.md'), 'rb')
+    ]);
 
-Route::post('/replies', function () {
-    request()->validate([
-        'body' => [
-            'required',
-            'string',
-            new SpamFree()
+    $assistant = OpenAI::assistants()->create([
+        'model' => 'gpt-4-1106-preview',
+        'name' => 'Laraparse Tutor',
+        'instructions' => 'You are a helpful programming teacher.',
+        'tools' => [
+            ['type' => 'retrieval']
+        ],
+        'file_ids' => [
+            $file->id
         ]
     ]);
 
-    return 'Redirect wherever is needed. Post was valid.';
+    $run = OpenAI::threads()->createAndRun([
+        'assistant_id' => $assistant->id,
+        'thread' => [
+            'messages' => [
+                ['role' => 'user', 'content' => 'How do I grab the first paragraph?']
+            ]
+        ]
+    ]);
+
+    do {
+        sleep(1);
+
+       $run = OpenAI::threads()->runs()->retrieve(
+           threadId: $run->threadId,
+           runId: $run->id
+       );
+    } while ($run->status !== 'completed');
+
+    $messages = OpenAI::threads()->messages()->list($run->threadId);
+
+    dd($messages);  
 });
+
