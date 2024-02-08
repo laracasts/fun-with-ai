@@ -25,4 +25,8 @@ return [
     */
 
     'request_timeout' => env('OPENAI_REQUEST_TIMEOUT', 30),
+
+    'assistant' => [
+        'id' => env('LARAPARSE_ASSISTANT_ID')
+    ]
 ];
